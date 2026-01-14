@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Aleatório Avançado</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; display:flex; justify-content:center; align-items:center; height:100vh; }
+    #chat { width: 400px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+    #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    input { width: 100%; padding: 10px; margin-bottom: 10px; }
+    button { width: 100%; padding: 10px; margin-bottom: 10px; background:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; }
+    #online { margin-bottom: 10px; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <div id="online">Usuários online: 0</div>
+    <div id="messages"></div>
+    <input id="input" placeholder="Digite sua mensagem..." autocomplete="off"/>
+    <button id="sendBtn">Enviar</button>
+    <button id="nextBtn">Próximo</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const onlineDiv = document.getElementById('online');
+
+    // Adiciona mensagem ao chat
+    function addMessage(msg){
+      const div = document.createElement('div');
+      div.textContent = msg;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Eventos do socket
+    socket.on('connected', msg => addMessage(msg));
+    socket.on('chat message', msg => addMessage(msg));
+    socket.on('updateOnline', num => onlineDiv.textContent = 'Usuários online: ' + num);
+
+    // Enviar mensagem com Enter
+    input.addEventListener('keypress', e => {
+      if(e.key === 'Enter' && input.value.trim() !== ''){
+        addMessage('Você: ' + input.value);
+        socket.emit('chat message', input.value);
+        input.value = '';
+        input.focus();
+      }
+    });
+
+    // Enviar mensagem com botão
+    sendBtn.addEventListener('click', () => {
+      if(input.value.trim() !== ''){
+        addMessage('Você: ' + input.value);
+        socket.emit('chat message', input.value);
+        input.value = '';
+        input.focus();
+      }
+    });
+
+    // Botão Próximo
+    nextBtn.addEventListener('click', () => {
+      socket.emit('next');
+      messages.innerHTML = '';
+    });
+  </script>
+</body>
+</html>
