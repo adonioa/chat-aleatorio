@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Chat Aleatório</title>
+<title>World 404</title>
 <script src="/socket.io/socket.io.js"></script>
 
 <style>
@@ -17,14 +17,8 @@
   --font-size: 14px;
 }
 
-body.dark {
-  --bg: #121212;
-  --chat: #1e1e1e;
-}
-
-body.large-font {
-  --font-size: 18px;
-}
+body.dark { --bg: #121212; --chat: #1e1e1e; }
+body.large-font { --font-size: 18px; }
 
 body {
   margin: 0;
@@ -71,114 +65,54 @@ body {
   scroll-behavior: smooth;
 }
 
-.msg-wrapper {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
+.msg-wrapper { display: flex; align-items: center; margin-bottom: 8px; }
 .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #555;
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: bold;
-  margin-right: 8px;
-  flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #555; color: #fff; display: flex;
+  justify-content: center; align-items: center; font-weight: bold;
+  margin-right: 8px; flex-shrink: 0;
 }
 
 .msg {
-  padding: 10px 15px;
-  border-radius: 14px;
-  max-width: 75%;
-  color: #fff;
+  padding: 10px 15px; border-radius: 14px;
+  max-width: 75%; color: #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   animation: fade 0.3s ease;
 }
 
-.me-wrapper {
-  flex-direction: row-reverse;
-}
-
+.me-wrapper { flex-direction: row-reverse; }
 .me-wrapper .avatar { margin-left: 8px; margin-right: 0; }
 
-.me {
-  background: linear-gradient(135deg, var(--you-start), var(--you-end));
-}
+.me { background: linear-gradient(135deg, var(--you-start), var(--you-end)); }
+.other { background: linear-gradient(135deg, var(--other-start), var(--other-end)); }
 
-.other {
-  background: linear-gradient(135deg, var(--other-start), var(--other-end));
-}
+.system { text-align:center; color:#aaa; font-size:12px; margin:5px 0; font-style:italic; }
 
-.system {
-  text-align: center;
-  color: #aaa;
-  font-size: 12px;
-  margin: 5px 0;
-  font-style: italic;
-}
-
-#input-area {
-  display: flex;
-  padding: 10px;
-  background: #222;
-}
-
-#text {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-}
+#input-area { display:flex; padding:10px; background:#222; }
+#text { flex:1; padding:10px; border-radius:8px; border:none; outline:none; }
 
 button {
-  margin-left: 5px;
-  border: none;
-  border-radius: 8px;
-  padding: 10px;
-  cursor: pointer;
-  transition: 0.2s;
+  margin-left:5px; border:none; border-radius:8px; padding:10px;
+  cursor:pointer; transition:0.2s;
 }
-
-button:hover { opacity: 0.8; }
-
-#send { background: #4caf50; color: #fff; }
-#next { background: #f44336; color: #fff; }
-#report { background: #ff9800; color: #fff; }
+button:hover { opacity:0.8; }
+#send { background:#4caf50; color:#fff; }
+#next { background:#f44336; color:#fff; }
+#report { background:#ff9800; color:#fff; }
 
 #settings-panel {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: var(--chat);
-  border-radius: 12px;
-  padding: 15px;
-  display: none;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  z-index: 10;
+  position:absolute; top:20px; right:20px;
+  background: var(--chat); border-radius:12px; padding:15px;
+  display:none; box-shadow:0 10px 30px rgba(0,0,0,0.2); z-index:10;
 }
+#settings-panel h4 { margin-top:0; }
+#settings-panel button { margin:5px 2px 0 0; }
 
-#settings-panel h4 { margin-top: 0; }
-#settings-panel button { margin: 5px 2px 0 0; }
+#timer,#msg-count { font-size:12px; color:#ccc; text-align:center; margin-top:2px; }
 
-#timer, #msg-count { font-size: 12px; color: #ccc; text-align: center; margin-top: 2px; }
-
-@keyframes fade {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes blink {
-  0%, 50%, 100% { opacity: 1; }
-  25%, 75% { opacity: 0.3; }
-}
-
-#next.blink { animation: blink 1s infinite; }
+@keyframes fade { from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:translateY(0);} }
+@keyframes blink { 0%,50%,100%{opacity:1;} 25%,75%{opacity:0.3;} }
+#next.blink { animation:blink 1s infinite; }
 </style>
 </head>
 
@@ -186,7 +120,7 @@ button:hover { opacity: 0.8; }
 
 <div id="app">
   <div id="header">
-    <span id="status">Conectando...</span>
+    <span id="status">Conectando ao World 404...</span>
     <span id="online">0 online</span>
   </div>
 
@@ -265,6 +199,7 @@ function formatTimer(t){
   return `Tempo de conversa: ${m}m ${s}s`;
 }
 
+// Adicionar mensagem
 function addMsg(texto, classe, avatarLetter = null){
   const wrapper = document.createElement("div");
   wrapper.className = classe==='me'?"msg-wrapper me-wrapper":"msg-wrapper";
@@ -272,13 +207,13 @@ function addMsg(texto, classe, avatarLetter = null){
   if(avatarLetter){
     const avatar = document.createElement("div");
     avatar.className="avatar";
-    avatar.textContent=avatarLetter.toUpperCase();
+    avatar.textContent = avatarLetter.toUpperCase();
     wrapper.appendChild(avatar);
   }
 
   const div = document.createElement("div");
   div.className="msg "+classe;
-  div.textContent=texto;
+  div.textContent = texto;
   wrapper.appendChild(div);
 
   messages.appendChild(wrapper);
@@ -301,7 +236,6 @@ function addSystem(texto){
 function send(){
   if(text.value.trim()==="") return;
 
-  // Filtrar palavras
   let censored = blockedWords.reduce((msg, word)=>msg.replace(new RegExp(word,"gi"), "***"), text.value);
 
   addMsg("Eu: "+censored,"me",nickname[0]);
@@ -320,7 +254,7 @@ text.addEventListener("keydown", e=>{
 document.getElementById("send").onclick = send;
 nextBtn.onclick = ()=>{
   messages.innerHTML="";
-  msgCount = 0;
+  msgCount=0;
   msgCountEl.textContent="Mensagens enviadas: 0";
   socket.emit("next");
   startTimer();
@@ -345,8 +279,6 @@ socket.on("system", msg=>{
   } else if(msg.includes("Procurando") || msg.includes("saiu")){
     clearInterval(interval);
   }
-
-  // Botão Próximo piscando se disponível
   if(msg.includes("Novo usuário disponível")){
     nextBtn.classList.add("blink");
   }
@@ -357,7 +289,7 @@ socket.on("online-count", n=>{
   document.getElementById("online").textContent = n+" online";
 });
 
-// === CONFIGURAÇÕES ===
+// === Configurações ===
 const settingsBtn = document.createElement("button");
 settingsBtn.textContent="⚙️";
 settingsBtn.style.marginLeft="10px";
