@@ -1,73 +1,380 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat Aleatório Avançado</title>
-  <style>
-    body { font-family: sans-serif; background: #f0f0f0; display:flex; justify-content:center; align-items:center; height:100vh; }
-    #chat { width: 400px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-    #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
-    input { width: 100%; padding: 10px; margin-bottom: 10px; }
-    button { width: 100%; padding: 10px; margin-bottom: 10px; background:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; }
-    #online { margin-bottom: 10px; font-weight:bold; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat Aleatório</title>
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+:root {
+  --bg: #f2f2f2;
+  --chat: #ffffff;
+  --you-start: #4caf50;
+  --you-end: #81c784;
+  --other-start: #2196f3;
+  --other-end: #64b5f6;
+  --font-size: 14px;
+}
+
+body.dark {
+  --bg: #121212;
+  --chat: #1e1e1e;
+}
+
+body.large-font {
+  --font-size: 18px;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  font-size: var(--font-size);
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  transition: background 0.3s, font-size 0.3s;
+}
+
+#app {
+  width: 100%;
+  max-width: 500px;
+  height: 92vh;
+  background: var(--chat);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  transition: background 0.3s;
+  position: relative;
+}
+
+#header {
+  padding: 10px;
+  background: #222;
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+}
+
+.msg-wrapper {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #555;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.msg {
+  padding: 10px 15px;
+  border-radius: 14px;
+  max-width: 75%;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  animation: fade 0.3s ease;
+}
+
+.me-wrapper {
+  flex-direction: row-reverse;
+}
+
+.me-wrapper .avatar { margin-left: 8px; margin-right: 0; }
+
+.me {
+  background: linear-gradient(135deg, var(--you-start), var(--you-end));
+}
+
+.other {
+  background: linear-gradient(135deg, var(--other-start), var(--other-end));
+}
+
+.system {
+  text-align: center;
+  color: #aaa;
+  font-size: 12px;
+  margin: 5px 0;
+  font-style: italic;
+}
+
+#input-area {
+  display: flex;
+  padding: 10px;
+  background: #222;
+}
+
+#text {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}
+
+button {
+  margin-left: 5px;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover { opacity: 0.8; }
+
+#send { background: #4caf50; color: #fff; }
+#next { background: #f44336; color: #fff; }
+#report { background: #ff9800; color: #fff; }
+
+#settings-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--chat);
+  border-radius: 12px;
+  padding: 15px;
+  display: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  z-index: 10;
+}
+
+#settings-panel h4 { margin-top: 0; }
+#settings-panel button { margin: 5px 2px 0 0; }
+
+#timer, #msg-count { font-size: 12px; color: #ccc; text-align: center; margin-top: 2px; }
+
+@keyframes fade {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.3; }
+}
+
+#next.blink { animation: blink 1s infinite; }
+</style>
 </head>
+
 <body>
-  <div id="chat">
-    <div id="online">Usuários online: 0</div>
-    <div id="messages"></div>
-    <input id="input" placeholder="Digite sua mensagem..." autocomplete="off"/>
-    <button id="sendBtn">Enviar</button>
-    <button id="nextBtn">Próximo</button>
+
+<div id="app">
+  <div id="header">
+    <span id="status">Conectando...</span>
+    <span id="online">0 online</span>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const messages = document.getElementById('messages');
-    const input = document.getElementById('input');
-    const sendBtn = document.getElementById('sendBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const onlineDiv = document.getElementById('online');
+  <div id="messages"></div>
+  <div id="timer">Tempo de conversa: 0s</div>
+  <div id="msg-count">Mensagens enviadas: 0</div>
 
-    // Adiciona mensagem ao chat
-    function addMessage(msg){
-      const div = document.createElement('div');
-      div.textContent = msg;
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
-    }
+  <div id="input-area">
+    <input id="text" placeholder="Digite uma mensagem..." />
+    <button id="send">Enviar</button>
+    <button id="next">Próximo</button>
+    <button id="report">Reportar</button>
+  </div>
+</div>
 
-    // Eventos do socket
-    socket.on('connected', msg => addMessage(msg));
-    socket.on('chat message', msg => addMessage(msg));
-    socket.on('updateOnline', num => onlineDiv.textContent = 'Usuários online: ' + num);
+<div id="settings-panel">
+  <h4>Definições</h4>
+  <button onclick="toggleTheme()">Tema Claro/Escuro</button><br>
+  <button onclick="setYouColor('#4caf50','#81c784')">Verde</button>
+  <button onclick="setYouColor('#2196f3','#64b5f6')">Azul</button>
+  <button onclick="setYouColor('#9c27b0','#ba68c8')">Roxo</button>
+  <button onclick="setYouColor('#f44336','#e57373')">Vermelho</button><br>
+  <button onclick="toggleFont()">Fonte Grande/Normal</button><br>
+  <button onclick="setLang('pt')">Português</button>
+  <button onclick="setLang('en')">English</button><br>
+  <button onclick="closeSettings()">Fechar</button>
+</div>
 
-    // Enviar mensagem com Enter
-    input.addEventListener('keypress', e => {
-      if(e.key === 'Enter' && input.value.trim() !== ''){
-        addMessage('Você: ' + input.value);
-        socket.emit('chat message', input.value);
-        input.value = '';
-        input.focus();
-      }
-    });
+<audio id="msg-sound" src="https://freesound.org/data/previews/522/522379_10368813-lq.mp3" preload="auto"></audio>
+<audio id="connect-sound" src="https://freesound.org/data/previews/522/522384_10368813-lq.mp3" preload="auto"></audio>
 
-    // Enviar mensagem com botão
-    sendBtn.addEventListener('click', () => {
-      if(input.value.trim() !== ''){
-        addMessage('Você: ' + input.value);
-        socket.emit('chat message', input.value);
-        input.value = '';
-        input.focus();
-      }
-    });
+<script>
+const socket = io();
 
-    // Botão Próximo
-    nextBtn.addEventListener('click', () => {
-      socket.emit('next');
-      messages.innerHTML = '';
-    });
-  </script>
+// Palavras bloqueadas
+const blockedWords = ["palavrão1","palavrão2"];
+
+// Nickname
+let nickname = localStorage.getItem("nickname");
+if(!nickname){
+  nickname = prompt("Escolha um nickname:");
+  localStorage.setItem("nickname", nickname);
+}
+socket.emit("set-nickname", nickname);
+
+const messages = document.getElementById("messages");
+const text = document.getElementById("text");
+const timerEl = document.getElementById("timer");
+const msgCountEl = document.getElementById("msg-count");
+const nextBtn = document.getElementById("next");
+
+let timer = 0;
+let interval = null;
+let msgCount = 0;
+let lang = 'pt';
+let inChat = false;
+
+// Sons
+const msgSound = document.getElementById("msg-sound");
+const connectSound = document.getElementById("connect-sound");
+
+// Timer
+function startTimer(){
+  clearInterval(interval);
+  timer = 0;
+  timerEl.textContent = formatTimer(timer);
+  interval = setInterval(()=>{
+    timer++;
+    timerEl.textContent = formatTimer(timer);
+  },1000);
+}
+
+function formatTimer(t){
+  const m = Math.floor(t/60);
+  const s = t%60;
+  return `Tempo de conversa: ${m}m ${s}s`;
+}
+
+function addMsg(texto, classe, avatarLetter = null){
+  const wrapper = document.createElement("div");
+  wrapper.className = classe==='me'?"msg-wrapper me-wrapper":"msg-wrapper";
+
+  if(avatarLetter){
+    const avatar = document.createElement("div");
+    avatar.className="avatar";
+    avatar.textContent=avatarLetter.toUpperCase();
+    wrapper.appendChild(avatar);
+  }
+
+  const div = document.createElement("div");
+  div.className="msg "+classe;
+  div.textContent=texto;
+  wrapper.appendChild(div);
+
+  messages.appendChild(wrapper);
+  messages.scrollTop = messages.scrollHeight;
+
+  if(classe==='other') msgSound.play();
+}
+
+function addSystem(texto){
+  const div = document.createElement("div");
+  div.className="system";
+  div.textContent=texto;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  connectSound.play();
+  if(navigator.vibrate) navigator.vibrate(100);
+}
+
+// Enviar mensagem
+function send(){
+  if(text.value.trim()==="") return;
+
+  // Filtrar palavras
+  let censored = blockedWords.reduce((msg, word)=>msg.replace(new RegExp(word,"gi"), "***"), text.value);
+
+  addMsg("Eu: "+censored,"me",nickname[0]);
+  socket.emit("message", censored);
+  text.value="";
+  msgCount++;
+  msgCountEl.textContent = "Mensagens enviadas: "+msgCount;
+}
+
+// Enter envia
+text.addEventListener("keydown", e=>{
+  if(e.key==="Enter"){ e.preventDefault(); send(); }
+});
+
+// Botões
+document.getElementById("send").onclick = send;
+nextBtn.onclick = ()=>{
+  messages.innerHTML="";
+  msgCount = 0;
+  msgCountEl.textContent="Mensagens enviadas: 0";
+  socket.emit("next");
+  startTimer();
+  nextBtn.classList.remove("blink");
+};
+document.getElementById("report").onclick = ()=>{
+  alert(lang==='pt'?"Usuário reportado!":"User reported!");
+  socket.emit("report");
+};
+
+// Receber mensagens
+socket.on("message", data=>{
+  addMsg(data.from+": "+data.text,"other",data.from[0]);
+});
+
+// Mensagens do sistema
+socket.on("system", msg=>{
+  addSystem(msg);
+  document.getElementById("status").textContent=msg;
+  if(msg.includes("Conectado")){
+    startTimer();
+  } else if(msg.includes("Procurando") || msg.includes("saiu")){
+    clearInterval(interval);
+  }
+
+  // Botão Próximo piscando se disponível
+  if(msg.includes("Novo usuário disponível")){
+    nextBtn.classList.add("blink");
+  }
+});
+
+// Usuários online
+socket.on("online-count", n=>{
+  document.getElementById("online").textContent = n+" online";
+});
+
+// === CONFIGURAÇÕES ===
+const settingsBtn = document.createElement("button");
+settingsBtn.textContent="⚙️";
+settingsBtn.style.marginLeft="10px";
+document.getElementById("header").appendChild(settingsBtn);
+
+const panel = document.getElementById("settings-panel");
+settingsBtn.onclick = ()=>{ panel.style.display = panel.style.display==="block"?"none":"block"; }
+
+function closeSettings(){ panel.style.display="none"; }
+function toggleTheme(){ document.body.classList.toggle("dark"); }
+function setYouColor(start,end){
+  document.documentElement.style.setProperty("--you-start",start);
+  document.documentElement.style.setProperty("--you-end",end);
+}
+function toggleFont(){ document.body.classList.toggle("large-font"); }
+function setLang(l){ lang=l; alert(lang==='pt'?'Idioma definido para Português':'Language set to English'); }
+</script>
+
 </body>
 </html>
